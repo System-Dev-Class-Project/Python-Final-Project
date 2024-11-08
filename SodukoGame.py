@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
 import random
-import copy
 
 class SudokuGUI:
     def __init__(self):
@@ -79,11 +78,30 @@ class SudokuGUI:
         
         # New Game button
         tk.Button(control_frame, text="New Game", font=('Arial', 12),
-                    command=self.return_to_menu).pack(pady=5)
+                 command=self.return_to_menu).pack(pady=5)
         
         # Exit button
         tk.Button(control_frame, text="Exit", font=('Arial', 12),
                  command=self.root.quit).pack(pady=5)
+        
+        # Timer label
+        self.timer_label = tk.Label(control_frame, text="Time: 00:00", font=('Arial', 12))
+        self.timer_label.pack(pady=10)
+
+    def start_timer(self):
+        self.seconds_elapsed = 0
+        self.timer_running = True
+        self.update_timer()
+
+    def update_timer(self):
+        if self.timer_running:
+            minutes, seconds = divmod(self.seconds_elapsed, 60)
+            self.timer_label.config(text=f"Time: {minutes:02}:{seconds:02}")
+            self.seconds_elapsed += 1
+            self.root.after(1000, self.update_timer)
+    
+    def stop_timer(self):
+        self.timer_running = False
 
     def return_to_menu(self):
         # Clear game state
@@ -114,7 +132,13 @@ class SudokuGUI:
                 
                 # Check if game is won
                 if self.check_win():
-                    messagebox.showinfo("Congratulations!", "You solved the Sudoku!")
+                    self.stop_timer()
+                    # Calculate minutes and seconds from elapsed time
+                    minutes, seconds = divmod(self.seconds_elapsed, 60)
+                    # Format the time message
+                    time_message = f"You solved the Sudoku! Your time is {minutes} minutes and {seconds} seconds."
+                    # Display message box with the time
+                    messagebox.showinfo("Congratulations!", time_message)
                     self.return_to_menu()
             else:
                 if (row, col) in self.original_cells:
@@ -235,6 +259,9 @@ class SudokuGUI:
         self.difficulty = difficulty
         self.create_game_ui()
         
+        # Start the timer
+        self.start_timer()
+        
         # Clear game state
         self.moves_history = []
         self.original_cells = set()
@@ -253,6 +280,7 @@ class SudokuGUI:
                     self.original_cells.add((i, j))
                 else:
                     self.cells[(i, j)].config(fg='blue')
+
 
     def run(self):
         self.root.mainloop()
