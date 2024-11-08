@@ -38,6 +38,10 @@ class SudokuGUI:
                  command=self.root.quit).pack(pady=20)
 
     def create_game_ui(self):
+        # Destroy existing game frame if it exists
+        if hasattr(self, 'grid_frame'):
+            self.grid_frame.destroy()
+        
         # Clear menu frame
         self.menu_frame.pack_forget()
         
@@ -49,6 +53,7 @@ class SudokuGUI:
         self.grid_frame.pack(side=tk.LEFT, padx=(0, 20))
         
         # Create cells
+        self.cells = {}  # Clear existing cells dictionary
         for i in range(9):
             for j in range(9):
                 cell = tk.Entry(self.grid_frame, width=2, font=('Arial', 18), 
@@ -74,17 +79,23 @@ class SudokuGUI:
         
         # New Game button
         tk.Button(control_frame, text="New Game", font=('Arial', 12),
-                 command=self.return_to_menu).pack(pady=5)
+                    command=self.return_to_menu).pack(pady=5)
         
         # Exit button
         tk.Button(control_frame, text="Exit", font=('Arial', 12),
                  command=self.root.quit).pack(pady=5)
 
     def return_to_menu(self):
-        self.game_frame.pack_forget()
-        self.menu_frame.pack(expand=True, fill='both')
+        # Clear game state
         self.moves_history = []
         self.original_cells = set()
+        self.selected = None
+        
+        # Hide game frame and show menu
+        self.game_frame.pack_forget()
+        if hasattr(self, 'grid_frame'):
+            self.grid_frame.destroy()
+        self.menu_frame.pack(expand=True, fill='both')
 
     def cell_selected(self, row, col):
         self.selected = (row, col)
@@ -223,6 +234,11 @@ class SudokuGUI:
     def start_game(self, difficulty):
         self.difficulty = difficulty
         self.create_game_ui()
+        
+        # Clear game state
+        self.moves_history = []
+        self.original_cells = set()
+        self.selected = None
         
         # Generate new puzzle
         puzzle = self.generate_puzzle(difficulty)
