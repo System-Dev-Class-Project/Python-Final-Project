@@ -36,6 +36,33 @@ class SudokuGUI:
         tk.Button(self.menu_frame, text="Exit", font=('Arial', 14),
                  command=self.root.quit).pack(pady=20)
 
+    def navigate(self, direction):
+        if not self.selected:
+            return
+
+        row, col = self.selected
+
+        # Define movement logic and skip original cells
+        while True:
+            if direction == "Up" and row > 0:
+                row -= 1
+            elif direction == "Down" and row < 8:
+                row += 1
+            elif direction == "Left" and col > 0:
+                col -= 1
+            elif direction == "Right" and col < 8:
+                col += 1
+            else:
+                break  # Stop if we're at the edge of the grid
+
+            # If the new cell is not prefilled, select it and exit
+            if (row, col) not in self.original_cells:
+                self.selected = (row, col)
+                self.cells[self.selected].focus_set()
+                break
+
+
+    
     def create_game_ui(self):
         # Destroy existing game frame if it exists
         if hasattr(self, 'grid_frame'):
@@ -87,6 +114,13 @@ class SudokuGUI:
         # Timer label
         self.timer_label = tk.Label(control_frame, text="Time: 00:00", font=('Arial', 12))
         self.timer_label.pack(pady=10)
+
+                # Bind arrow keys for navigation
+        self.root.bind('<Up>', lambda e: self.navigate("Up"))
+        self.root.bind('<Down>', lambda e: self.navigate("Down"))
+        self.root.bind('<Left>', lambda e: self.navigate("Left"))
+        self.root.bind('<Right>', lambda e: self.navigate("Right"))
+
 
     def start_timer(self):
         self.seconds_elapsed = 0
