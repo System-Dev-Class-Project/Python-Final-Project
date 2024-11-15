@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import messagebox
 import random
 import Game_Logic
+
+
 class SudokuGUI:
     def __init__(self):
         self.root = tk.Tk()
@@ -62,8 +64,6 @@ class SudokuGUI:
                 self.cells[self.selected].focus_set()
                 break
 
-
-
     def create_game_ui(self):
         # Destroy existing game frame if it exists
         if hasattr(self, 'grid_frame'):
@@ -112,6 +112,9 @@ class SudokuGUI:
         tk.Button(control_frame, text="Exit", font=('Arial', 12),
                   command=self.root.quit).pack(pady=5)
 
+        tk.Button(control_frame, text="Hint", font=('Arial', 12),
+                  command=self.give_hint).pack(pady=5)
+
         # Timer label
         self.timer_label = tk.Label(control_frame, text="Time: 00:00", font=('Arial', 12))
         self.timer_label.pack(pady=10)
@@ -122,6 +125,21 @@ class SudokuGUI:
         self.root.bind('<Left>', lambda e: self.navigate("Left"))
         self.root.bind('<Right>', lambda e: self.navigate("Right"))
 
+    def give_hint(self):
+        if self.selected:
+            row, col = self.selected
+
+            # Check if the cell is not an original cell and is empty
+            if (row, col) not in self.original_cells and not self.cells[(row, col)].get():
+                # Fill the cell with the correct value from the solution
+                correct_value = self.solution[row][col]
+                self.cells[(row, col)].delete(0, tk.END)
+                self.cells[(row, col)].insert(0, str(correct_value))
+                self.cells[(row, col)].config(fg='green')  # Use a different color to indicate a hint
+            else:
+                messagebox.showinfo("Hint", "Please select an empty cell that you can modify.")
+        else:
+            messagebox.showinfo("Hint", "Please select a cell to use a hint.")
 
     def start_timer(self):
         self.seconds_elapsed = 0
@@ -159,7 +177,6 @@ class SudokuGUI:
                     return False
         return True
 
-
     def is_valid_move(self, row, col, num):
         # Check row
         for j in range(9):
@@ -179,6 +196,7 @@ class SudokuGUI:
                     return False
 
         return True
+
     def cell_selected(self, row, col):
         self.selected = (row, col)
 
@@ -220,7 +238,7 @@ class SudokuGUI:
                 if self.check_win():
                     self.stop_timer()
                     minutes, seconds = divmod(self.seconds_elapsed, 60)
-                    time_message = f"You solved the Sudoku! Your time is {minutes} minutes and {seconds} seconds."
+                    time_message = f"Congratulations!!!\nYou solved the Sudoku! Your time is {minutes} minutes and {seconds} seconds."
                     messagebox.showinfo("Congratulations!", time_message)
                     self.return_to_menu()
             else:
@@ -238,7 +256,6 @@ class SudokuGUI:
             self.cells[(row, col)].config(fg='blue', bg='white')
             if value:
                 self.cells[(row, col)].insert(0, value)
-
 
     def start_game(self, difficulty):
         self.difficulty = difficulty
@@ -268,6 +285,7 @@ class SudokuGUI:
 
     def run(self):
         self.root.mainloop()
+
 
 if __name__ == "__main__":
     game = SudokuGUI()
