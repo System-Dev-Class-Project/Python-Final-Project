@@ -14,8 +14,8 @@ class SudokuGUI:
         self.moves_history = []
 
         # Create menu frame
-        self.menu_frame = tk.Frame(self.root)
-        self.menu_frame.pack(expand=True, fill='both')
+        self.menu_frame = tk.Frame(self.root, bg="#f0f0f0")
+        self.menu_frame.pack(expand=True, fill='both', padx=100, pady=50)
         self.create_menu()
 
         # Create main game frame (initially hidden)
@@ -24,20 +24,15 @@ class SudokuGUI:
         self.solution = None
 
     def create_menu(self):
-        title = tk.Label(self.menu_frame, text="SUDOKU", font=('Arial', 24, 'bold'))
-        title.pack(pady=20)
+        title = tk.Label(self.menu_frame, text="SUDOKU", font=('Arial', 36, 'bold'))
+        title.pack(pady=40)
 
-        # Difficulty buttons
-        tk.Button(self.menu_frame, text="Easy", font=('Arial', 14),
-                  command=lambda: self.start_game("easy")).pack(pady=10)
-        tk.Button(self.menu_frame, text="Medium", font=('Arial', 14),
-                  command=lambda: self.start_game("medium")).pack(pady=10)
-        tk.Button(self.menu_frame, text="Hard", font=('Arial', 14),
-                  command=lambda: self.start_game("hard")).pack(pady=10)
+        tk.Button(self.menu_frame, text="Easy", font=('Arial', 18), command=lambda: self.start_game("easy")).pack(pady=15, fill='x')
+        tk.Button(self.menu_frame, text="Medium", font=('Arial', 18), command=lambda: self.start_game("medium")).pack(pady=15, fill='x')
+        tk.Button(self.menu_frame, text="Hard", font=('Arial', 18), command=lambda: self.start_game("hard")).pack(pady=15, fill='x')
 
         # Exit button
-        tk.Button(self.menu_frame, text="Exit", font=('Arial', 14),
-                  command=self.root.quit).pack(pady=20)
+        tk.Button(self.menu_frame, text="Exit", font=('Arial', 18, 'bold'), command=self.root.quit, fg='black').pack(pady=30)
 
     def navigate(self, direction):
         if not self.selected:
@@ -69,6 +64,10 @@ class SudokuGUI:
         if hasattr(self, 'grid_frame'):
             self.grid_frame.destroy()
 
+        # Destroy existing control frame if it exists
+        if hasattr(self, 'control_frame'):
+            self.control_frame.destroy()
+
         # Clear menu frame
         self.menu_frame.pack_forget()
 
@@ -97,26 +96,26 @@ class SudokuGUI:
                     cell.grid(padx=(3, 1))
 
         # Create control panel
-        control_frame = tk.Frame(self.game_frame)
-        control_frame.pack(side=tk.LEFT, fill='y')
+        self.control_frame = tk.Frame(self.game_frame)
+        self.control_frame.pack(side=tk.LEFT, fill='y')
 
         # Undo button
-        tk.Button(control_frame, text="Undo", font=('Arial', 12),
+        tk.Button(self.control_frame, text="Undo", font=('Arial', 12),
                   command=self.undo_move).pack(pady=5)
 
         # New Game button
-        tk.Button(control_frame, text="New Game", font=('Arial', 12),
+        tk.Button(self.control_frame, text="New Game", font=('Arial', 12),
                   command=self.return_to_menu).pack(pady=5)
 
         # Exit button
-        tk.Button(control_frame, text="Exit", font=('Arial', 12),
+        tk.Button(self.control_frame, text="Exit", font=('Arial', 12),
                   command=self.root.quit).pack(pady=5)
 
-        tk.Button(control_frame, text="Hint", font=('Arial', 12),
+        tk.Button(self.control_frame, text="Hint", font=('Arial', 12),
                   command=self.give_hint).pack(pady=5)
 
         # Timer label
-        self.timer_label = tk.Label(control_frame, text="Time: 00:00", font=('Arial', 12))
+        self.timer_label = tk.Label(self.control_frame, text="Time: 00:00", font=('Arial', 12))
         self.timer_label.pack(pady=10)
 
         # Bind arrow keys for navigation
