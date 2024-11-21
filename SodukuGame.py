@@ -9,7 +9,13 @@ class LeaderboardManager:
     def __init__(self, db_path='leaderboard.sqlite'):
         self.db_path = db_path
         self.initialize_database()
-
+        
+        # Check if leaderboard is empty and populate if needed
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM leaderboard')
+            if cursor.fetchone()[0] == 0:
+                self.populate_initial_leaderboard()
     def initialize_database(self):
         """Create leaderboard database and table if they don't exist."""
         with sqlite3.connect(self.db_path) as conn:
@@ -46,6 +52,29 @@ class LeaderboardManager:
                 LIMIT ?
             ''', (limit,))
             return cursor.fetchall()
+    def populate_initial_leaderboard(self):
+        """Add some initial sample scores to the leaderboard."""
+        sample_scores = [
+            ('Alice', 'easy', 120.5),
+            ('Bob', 'medium', 180.7),
+            ('Charlie', 'hard', 250.3),
+            ('David', 'easy', 95.2),
+            ('Eve', 'medium', 165.4),
+            ('Frank', 'hard', 210.6),
+            ('Grace', 'easy', 110.8),
+            ('Henry', 'medium', 195.2),
+            ('Isabelle', 'hard', 275.9),
+            ('Jack', 'easy', 88.6)
+        ]
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            for username, difficulty, game_time in sample_scores:
+                cursor.execute('''
+                    INSERT INTO leaderboard (username, difficulty, time) 
+                    VALUES (?, ?, ?)
+                ''', (username, difficulty, game_time))
+            conn.commit()
 
 class UserManager:
     def __init__(self, db_path='users.sqlite'):
@@ -382,6 +411,13 @@ class SudokuGUI:
                 value = self.cells[(i, j)].get()
                 if not value or not Game_Logic.is_valid_solution(i, j, int(value), self.cells):
                     return False
+        
+        # Calculate game time
+        game_time = time.time() - self.start_time
+        
+        # Add score to leaderboard
+        self.leaderboard_manager.add_score(self.current_user, self.difficulty, game_time)
+        
         return True
 
     def is_valid_move(self, row, col, num):
@@ -464,6 +500,7 @@ class SudokuGUI:
             if value:
                 self.cells[(row, col)].insert(0, value)
 
+
     def start_game(self, difficulty):
         self.difficulty = difficulty
         self.create_game_ui()
@@ -490,6 +527,8 @@ class SudokuGUI:
                 else:
                     self.cells[(i, j)].config(fg='blue')
 
+        # Save start time for tracking game duration
+        self.start_time = time.time()
     def run(self):
         self.root.mainloop()
 
