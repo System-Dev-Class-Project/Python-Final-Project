@@ -1,8 +1,94 @@
 import tkinter as tk
 from tkinter import messagebox
+import sqlite3
 import random
 import Game_Logic
+import time
+import os
+class LeaderboardManager:
+    def __init__(self, db_path='leaderboard.sqlite'):
+        self.db_path = db_path
+        self.initialize_database()
 
+    def initialize_database(self):
+        """Create leaderboard database and table if they don't exist."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS leaderboard (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL,
+                    difficulty TEXT NOT NULL,
+                    time REAL NOT NULL,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.commit()
+
+    def add_score(self, username, difficulty, game_time):
+        """Add a new score to the leaderboard."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO leaderboard (username, difficulty, time) 
+                VALUES (?, ?, ?)
+            ''', (username, difficulty, game_time))
+            conn.commit()
+
+    def get_top_scores(self, limit=10):
+        """Retrieve top scores sorted by time."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT username, difficulty, time 
+                FROM leaderboard 
+                ORDER BY time ASC 
+                LIMIT ?
+            ''', (limit,))
+            return cursor.fetchall()
+
+class UserManager:
+    def __init__(self, db_path='users.sqlite'):
+        self.db_path = db_path
+        self.initialize_database()
+
+    def initialize_database(self):
+        """Create users database and table if they don't exist."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL
+                )
+            ''')
+            # Add a default admin user if no users exist
+            cursor.execute('SELECT COUNT(*) FROM users')
+            if cursor.fetchone()[0] == 0:
+                cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', 
+                               ('admin', 'password'))
+            conn.commit()
+
+    def validate_login(self, username, password):
+        """Validate user credentials."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', 
+                           (username, password))
+            return cursor.fetchone() is not None
+
+    def register_user(self, username, password):
+        """Register a new user."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', 
+                               (username, password))
+                conn.commit()
+                return True
+        except sqlite3.IntegrityError:
+            return False  # Username already exists
 
 class SudokuGUI:
     def __init__(self):
@@ -13,6 +99,9 @@ class SudokuGUI:
         self.original_cells = set()
         self.moves_history = []
 
+        #db greier
+        self.user_manager = UserManager()
+        self.leaderboard_manager = LeaderboardManager()
         # Create menu frame
         self.menu_frame = tk.Frame(self.root, bg="#f0f0f0")
         self.menu_frame.pack(expand=True, fill='both', padx=100, pady=50)
@@ -31,8 +120,127 @@ class SudokuGUI:
         tk.Button(self.menu_frame, text="Medium", font=('Arial', 18), command=lambda: self.start_game("medium")).pack(pady=15, fill='x')
         tk.Button(self.menu_frame, text="Hard", font=('Arial', 18), command=lambda: self.start_game("hard")).pack(pady=15, fill='x')
 
+        # log in / leaderboard
+        tk.Button(self.menu_frame, text="Leaderboard", font=('Arial', 18),
+                  command=self.show_leaderboard).pack(pady=10)
+        tk.Button(self.menu_frame, text="Guest", font=('Arial', 18),
+                  command=self.start_as_guest).pack(pady=10)
+        tk.Button(self.menu_frame, text="Log in", font=('Arial', 18),
+                  command=self.open_login_popup).pack(pady=10)
+        tk.Button(self.menu_frame, text="Register", font=('Arial', 18),
+                  command=self.open_register_popup).pack(pady=10)
         # Exit button
         tk.Button(self.menu_frame, text="Exit", font=('Arial', 18, 'bold'), command=self.root.quit, fg='black').pack(pady=30)
+#log in and registration
+
+    def start_as_guest(self):
+        self.current_user = "Guest"
+        self.show_difficulty_selection()
+
+    def open_login_popup(self):
+        popup = tk.Toplevel(self.root)
+        popup.title("Login")
+        popup.geometry("300x200")
+
+        tk.Label(popup, text="Username:").pack(pady=5)
+        username_entry = tk.Entry(popup)
+        username_entry.pack()
+
+        tk.Label(popup, text="Password:").pack(pady=5)
+        password_entry = tk.Entry(popup, show="*")
+        password_entry.pack()
+
+        def handle_login():
+            username = username_entry.get()
+            password = password_entry.get()
+
+            if self.user_manager.validate_login(username, password):
+                self.current_user = username
+                messagebox.showinfo("Login", f"Welcome, {username}!")
+                popup.destroy()
+                self.show_difficulty_selection()
+            else:
+                messagebox.showerror("Login Failed", "Invalid credentials")
+
+        tk.Button(popup, text="Login", command=handle_login).pack(pady=10)
+
+    def open_register_popup(self):
+        popup = tk.Toplevel(self.root)
+        popup.title("Register")
+        popup.geometry("300x250")
+
+        tk.Label(popup, text="Username:").pack(pady=5)
+        username_entry = tk.Entry(popup)
+        username_entry.pack()
+
+        tk.Label(popup, text="Password:").pack(pady=5)
+        password_entry = tk.Entry(popup, show="*")
+        password_entry.pack()
+
+        tk.Label(popup, text="Confirm Password:").pack(pady=5)
+        confirm_entry = tk.Entry(popup, show="*")
+        confirm_entry.pack()
+
+        def handle_registration():
+            username = username_entry.get()
+            password = password_entry.get()
+            confirm = confirm_entry.get()
+
+            if not username or not password:
+                messagebox.showerror("Error", "All fields are required")
+                return
+
+            if password != confirm:
+                messagebox.showerror("Error", "Passwords do not match")
+                return
+
+            if self.user_manager.register_user(username, password):
+                messagebox.showinfo("Success", "Registration successful!")
+                popup.destroy()
+            else:
+                messagebox.showerror("Error", "Username already exists")
+
+        tk.Button(popup, text="Register", command=handle_registration).pack(pady=10)
+
+#leaderboard
+    def show_leaderboard(self):
+        leaderboard_window = tk.Toplevel(self.root)
+        leaderboard_window.title("Leaderboard")
+        leaderboard_window.geometry("400x400")
+
+        scores = self.leaderboard_manager.get_top_scores()
+
+        tk.Label(leaderboard_window, text="Top Scores", font=('Arial', 18)).pack(pady=10)
+
+        leaderboard_frame = tk.Frame(leaderboard_window)
+        leaderboard_frame.pack(expand=True, fill='both', padx=20)
+
+        tk.Label(leaderboard_frame, text="Rank", font=('Arial', 12)).grid(row=0, column=0)
+        tk.Label(leaderboard_frame, text="Username", font=('Arial', 12)).grid(row=0, column=1)
+        tk.Label(leaderboard_frame, text="Difficulty", font=('Arial', 12)).grid(row=0, column=2)
+        tk.Label(leaderboard_frame, text="Time", font=('Arial', 12)).grid(row=0, column=3)
+
+        for rank, (username, difficulty, time) in enumerate(scores, 1):
+            tk.Label(leaderboard_frame, text=str(rank)).grid(row=rank, column=0)
+            tk.Label(leaderboard_frame, text=username).grid(row=rank, column=1)
+            tk.Label(leaderboard_frame, text=difficulty).grid(row=rank, column=2)
+            tk.Label(leaderboard_frame, text=f"{time:.2f}s").grid(row=rank, column=3)
+
+        tk.Button(leaderboard_window, text="Close", command=leaderboard_window.destroy).pack(pady=10)
+
+
+#difficulty menu 
+    def show_difficulty_selection(self):
+        for widget in self.menu_frame.winfo_children():
+            widget.destroy()
+
+        tk.Label(self.menu_frame, text="Select Difficulty", font=('Arial', 18)).pack(pady=20)
+
+        tk.Button(self.menu_frame, text="Easy", font=('Arial', 18), command=lambda: self.start_game("easy")).pack(pady=15, fill='x')
+        tk.Button(self.menu_frame, text="Medium", font=('Arial', 18), command=lambda: self.start_game("medium")).pack(pady=15, fill='x')
+        tk.Button(self.menu_frame, text="Hard", font=('Arial', 18), command=lambda: self.start_game("hard")).pack(pady=15, fill='x')
+
+        tk.Button(self.menu_frame, text="Leaderboard", font=('Arial', 18), command=self.show_leaderboard).pack(pady=15, fill='x')
 
     def navigate(self, direction):
         if not self.selected:
