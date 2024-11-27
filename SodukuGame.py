@@ -30,25 +30,49 @@ class SudokuGUI:
         self.solution = None
 
     def create_menu(self):
-        title = tk.Label(self.menu_frame, text="SUDOKU", font=('Arial', 36, 'bold'))
-        title.pack(pady=40)
+        """Display the initial menu with Register, Log In, Play as Guest, and Leaderboard."""
+        # Clear the menu frame
+        for widget in self.menu_frame.winfo_children():
+            widget.destroy()
 
-        tk.Button(self.menu_frame, text="Easy", font=('Arial', 18), command=lambda: self.start_game("easy")).pack(pady=15, fill='x')
-        tk.Button(self.menu_frame, text="Medium", font=('Arial', 18), command=lambda: self.start_game("medium")).pack(pady=15, fill='x')
-        tk.Button(self.menu_frame, text="Hard", font=('Arial', 18), command=lambda: self.start_game("hard")).pack(pady=15, fill='x')
+        # Title
+        title = tk.Label(self.menu_frame, text="SUDOKU", font=('Arial', 48, 'bold'), bg="#f0f0f0", fg="#000000")
+        title.pack(pady=(20, 50))
 
-        # log in / leaderboard
-        tk.Button(self.menu_frame, text="Leaderboard", font=('Arial', 18),
-                  command=self.show_leaderboard).pack(pady=10)
-        tk.Button(self.menu_frame, text="Guest", font=('Arial', 18),
-                  command=self.start_as_guest).pack(pady=10)
-        tk.Button(self.menu_frame, text="Log in", font=('Arial', 18),
-                  command=self.open_login_popup).pack(pady=10)
-        tk.Button(self.menu_frame, text="Register", font=('Arial', 18),
-                  command=self.open_register_popup).pack(pady=10)
+        # Instructions
+        subtitle = tk.Label(self.menu_frame, text="Select an option to get started",
+                            font=('Arial', 18), bg="#f0f0f0", fg="#000000")
+        subtitle.pack(pady=(0, 30))
+
+        # Button Styles
+        button_style = {
+            'font': ('Arial', 18),
+            'bg': '#4CAF50',
+            'fg': '#000000',
+            'activebackground': '#45a049',
+            'activeforeground': '#000000',
+            'relief': 'raised',
+            'bd': 3,
+            'cursor': 'hand2'
+        }
+
+        # Buttons
+        tk.Button(self.menu_frame, text="Register", **button_style,
+                  command=self.open_register_popup).pack(pady=10, fill='x', padx=20)
+        tk.Button(self.menu_frame, text="Log In", **button_style,
+                  command=self.open_login_popup).pack(pady=10, fill='x', padx=20)
+        tk.Button(self.menu_frame, text="Play as Guest", **button_style,
+                  command=self.start_as_guest).pack(pady=10, fill='x', padx=20)
+        tk.Button(self.menu_frame, text="Leaderboard", **button_style,
+                  command=self.show_leaderboard).pack(pady=10, fill='x', padx=20)
+
         # Exit button
-        tk.Button(self.menu_frame, text="Exit", font=('Arial', 18, 'bold'), command=self.root.quit, fg='black').pack(pady=30)
-#log in and registration
+        exit_button_style = button_style.copy()
+        exit_button_style.update({'bg': '#f44336', 'activebackground': '#e53935'})
+        tk.Button(self.menu_frame, text="Exit", **exit_button_style,
+                  command=self.root.quit).pack(pady=(30, 10), fill='x', padx=20)
+
+
 
     def start_as_guest(self):
         self.current_user = "Guest"
@@ -119,7 +143,7 @@ class SudokuGUI:
 
         tk.Button(popup, text="Register", command=handle_registration).pack(pady=10)
 
-#leaderboard
+    #leaderboard
     def show_leaderboard(self):
         leaderboard_window = tk.Toplevel(self.root)
         leaderboard_window.title("Leaderboard")
@@ -146,18 +170,30 @@ class SudokuGUI:
         tk.Button(leaderboard_window, text="Close", command=leaderboard_window.destroy).pack(pady=10)
 
 
-#difficulty menu 
+    #difficulty menu
     def show_difficulty_selection(self):
+        """Display the difficulty selection menu after a user logs in or chooses to play as a guest."""
+        # Clear the menu frame
         for widget in self.menu_frame.winfo_children():
             widget.destroy()
 
-        tk.Label(self.menu_frame, text="Select Difficulty", font=('Arial', 18)).pack(pady=20)
+        # Title
+        title = tk.Label(self.menu_frame, text="Select Difficulty", font=('Arial', 24, 'bold'))
+        title.pack(pady=40)
 
-        tk.Button(self.menu_frame, text="Easy", font=('Arial', 18), command=lambda: self.start_game("easy")).pack(pady=15, fill='x')
-        tk.Button(self.menu_frame, text="Medium", font=('Arial', 18), command=lambda: self.start_game("medium")).pack(pady=15, fill='x')
-        tk.Button(self.menu_frame, text="Hard", font=('Arial', 18), command=lambda: self.start_game("hard")).pack(pady=15, fill='x')
+        # Difficulty Buttons
+        tk.Button(self.menu_frame, text="Easy", font=('Arial', 18),
+                  command=lambda: self.start_game("easy")).pack(pady=15, fill='x')
+        tk.Button(self.menu_frame, text="Medium", font=('Arial', 18),
+                  command=lambda: self.start_game("medium")).pack(pady=15, fill='x')
+        tk.Button(self.menu_frame, text="Hard", font=('Arial', 18),
+                  command=lambda: self.start_game("hard")).pack(pady=15, fill='x')
 
-        tk.Button(self.menu_frame, text="Leaderboard", font=('Arial', 18), command=self.show_leaderboard).pack(pady=15, fill='x')
+        # Back to main menu button
+        tk.Button(self.menu_frame, text="Back to Main Menu", font=('Arial', 18),
+                  command=self.create_menu).pack(pady=30)
+
+
 
     def navigate(self, direction):
         if not self.selected:
@@ -299,13 +335,13 @@ class SudokuGUI:
                 value = self.cells[(i, j)].get()
                 if not value or not Game_Logic.is_valid_solution(i, j, int(value), self.cells):
                     return False
-        
+
         # Calculate game time
         game_time = time.time() - self.start_time
-        
+
         # Add score to leaderboard
         self.leaderboard_manager.add_score(self.current_user, self.difficulty, game_time)
-        
+
         return True
 
     def is_valid_move(self, row, col, num):

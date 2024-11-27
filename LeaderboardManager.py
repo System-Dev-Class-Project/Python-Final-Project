@@ -71,3 +71,17 @@ class LeaderboardManager:
                     VALUES (?, ?, ?)
                 ''', (username, difficulty, game_time))
             conn.commit()
+
+    def delete(self, username):
+        """Delete all entries of the specified username from the leaderboard."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM leaderboard WHERE username = ?
+            ''', (username,))
+            conn.commit()
+
+if __name__ == "__main__":
+    username_to_delete = ""
+    leaderboard_manager = LeaderboardManager()
+    leaderboard_manager.delete(username_to_delete)
