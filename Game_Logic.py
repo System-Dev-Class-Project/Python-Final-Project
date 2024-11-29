@@ -61,7 +61,8 @@ def generate_filled_sudoku():
     return fill_sudoku(grid)
 
 
-# def generate_puzzle(difficulty):
+# def generate_puzzle(difficulty): # this function solution is bad because
+# #returned grid has multiple solutions,  which contradicts to sudoku rules
 #     # Create a solved Sudoku grid
 #     grid = generate_filled_sudoku()
 #     # Remove numbers based on difficulty
@@ -77,7 +78,7 @@ def generate_filled_sudoku():
 #     return grid
 
 def solve(grid, solutions_count, max_solutions=2):
-    """Attempt to solve the Sudoku puzzle, stopping early if more than one solution is found."""
+    """Attempt to solve the Sudoku puzzle, stopping if more than one solution is found."""
     if solutions_count[0] > max_solutions:
         return
     # Find the next empty cell
