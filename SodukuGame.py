@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import Game_Logic
 import time
+import Play_Sound
 
 from LeaderboardManager import LeaderboardManager
 from UserManager import UserManager
@@ -405,6 +406,7 @@ class SudokuGUI:
                 if self.check_win():
                     self.stop_timer()
                     minutes, seconds = divmod(self.seconds_elapsed, 60)
+                    Play_Sound.play_victory()
                     time_message = f"Congratulations!!!\nYou solved the Sudoku! Your time is {minutes} minutes and {seconds} seconds."
                     messagebox.showinfo("Congratulations!", time_message)
                     self.return_to_menu()
@@ -413,6 +415,8 @@ class SudokuGUI:
                 self.cells[self.selected].delete(0, tk.END)
                 self.cells[self.selected].insert(0, event.char)
                 self.cells[self.selected].config(bg='pink')
+                # Play sound
+                Play_Sound.play_wrong_move()
 
         return "break"  # Prevent default behavior
 
@@ -453,6 +457,11 @@ class SudokuGUI:
 
         # Save start time for tracking game duration
         self.start_time = time.time()
+        
+        # Play sounds
+        Play_Sound.play_new_game()
+        Play_Sound.play_ticking()
+    
     def run(self):
         self.root.mainloop()
 
