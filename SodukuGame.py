@@ -3,6 +3,7 @@ from tkinter import messagebox
 import Game_Logic
 import time
 import Play_Sound
+import pygame
 
 from LeaderboardManager import LeaderboardManager
 from UserManager import UserManager
@@ -16,6 +17,8 @@ class SudokuGUI:
         self.selected = None
         self.original_cells = set()
         self.moves_history = []
+        self.timer_running = False
+        self.timer_job = None
 
         #db greier
         self.user_manager = UserManager()
@@ -312,12 +315,17 @@ class SudokuGUI:
             minutes, seconds = divmod(self.seconds_elapsed, 60)
             self.timer_label.config(text=f"Time: {minutes:02}:{seconds:02}")
             self.seconds_elapsed += 1
-            self.root.after(1000, self.update_timer)
+            self.timer_job = self.root.after(1000, self.update_timer)
 
     def stop_timer(self):
         self.timer_running = False
+        if self.timer_job:
+            self.root.after_cancel(self.timer_job)
+            self.timer_job = None
 
     def return_to_menu(self):
+        # Stop ticking sound
+        pygame.mixer.Channel(2).stop()
         # Clear game state
         self.moves_history = []
         self.original_cells = set()
@@ -432,7 +440,10 @@ class SudokuGUI:
     def start_game(self, difficulty):
         self.difficulty = difficulty
         self.create_game_ui()
-
+        
+        # Stop any active timers
+        self.stop_timer()
+        
         # Start the timer
         self.start_timer()
 
