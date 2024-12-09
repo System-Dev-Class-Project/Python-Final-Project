@@ -1,9 +1,9 @@
 import pygame
 pygame.mixer.init()
-new_game_sound = pygame.mixer.Sound('Python-Final-Project/Sound_Effects/new_game.mp3')
-ticking_sound = pygame.mixer.Sound('Python-Final-Project/Sound_Effects/ticking.mp3')
-victory_sound = pygame.mixer.Sound('Python-Final-Project/Sound_Effects/victory.mp3')
-wrong_move_sound = pygame.mixer.Sound('Python-Final-Project/Sound_Effects/wrong_move.mp3')
+new_game_sound = pygame.mixer.Sound('Sound_Effects/new_game.mp3')
+ticking_sound = pygame.mixer.Sound('Sound_Effects/ticking.mp3')
+victory_sound = pygame.mixer.Sound('Sound_Effects/victory.mp3')
+wrong_move_sound = pygame.mixer.Sound('Sound_Effects/wrong_move.mp3')
 
 
 def play_new_game():

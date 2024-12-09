@@ -1,4 +1,6 @@
 import random
+import time
+import os
 
 
 def is_valid_solution(row, col, num, cells):
@@ -91,6 +93,10 @@ def solve(grid, solutions_count, max_solutions=2):
                         grid[row][col] = num
                         solve(grid, solutions_count, max_solutions)  # Recurse
                         grid[row][col] = 0  # Backtrack
+                        # if __name__ == "__main__":
+                        #     print_grid(grid)
+                        #     time.sleep(0.1)
+                        #     os.system('clear')
                 return
     solutions_count[0] += 1  # Found one solution
 
@@ -132,8 +138,16 @@ def generate_puzzle(difficulty):
 
     return puzzle, original_puzzle
 
+def print_grid(grid):
+    for row in grid:
+        print(row)
+    print("")
+
+
+
 
 if __name__ == "__main__":
-    puz, sol = generate_puzzle('hard')
-    print(puz)
-    print(sol)
+    generate_puzzle("hard")
+
+
+
